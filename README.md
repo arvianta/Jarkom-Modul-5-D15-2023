@@ -156,7 +156,24 @@ route add -net 10.29.8.0 netmask 255.255.252.0 gw 10.29.14.150
 route add -net 0.0.0.0 netmask 0.0.0.0 gw 10.29.14.149
 ```
 
-### Setup DHCP
+### Setup DHCP Server
+
+#### Install isc-dhcp-server
+
+```
+$ apt-get update && apt-get install isc-dhcp-server -y
+```
+
+#### Konfigurasi DHCP Server
+
+> /etc/default/isc-dhcp-server
+
+```
+INTERFACESv4="eth0"
+INTERFACESv6=""
+```
+
+> /etc/dhcp/dhcpd.conf
 
 ```
 subnet 10.29.14.128 netmask 255.255.255.252 {
@@ -208,6 +225,169 @@ subnet 10.29.8.0 netmask 255.255.252.0 {
     default-lease-time 600;
     max-lease-time 7200;
 }
+```
+
+#### Start DHCP Server
+
+```
+$ service isc-dhcp-server start
+```
+
+### Setup DHCP Relay
+
+#### Install isc-dhcp-relay
+
+```
+$ apt-get update && apt-get install isc-dhcp-relay -y
+```
+
+#### Konfigurasi DHCP Relay
+
+> /etc/sysctl.conf
+
+```
+net.ipv4.ip_forward=1
+```
+
+> /etc/default/isc-dhcp-relay
+
+```
+# What servers should the DHCP relay forward requests to?
+SERVERS="10.29.14.130"
+
+# On what interfaces should the DHCP relay (dhrelay) serve DHCP requests?
+INTERFACES="eth1 eth2"
+
+# Additional options that are passed to the DHCP relay daemon?
+OPTIONS=""
+```
+
+#### Start DHCP Relay
+
+```
+$ service isc-dhcp-relay start
+```
+
+### Setup DNS Server
+
+#### Install bind9
+
+```
+$ apt-get update && apt-get install bind9 -y
+```
+
+#### Konfigurasi DNS Server
+
+> /etc/bind/named.conf.local
+
+```
+zone "jarkomd15.com" {
+        type master;
+        file "/etc/bind/jarkom/jarkomd15.com";
+};
+```
+
+> /etc/bind/jarkom/jarkomd15.com
+
+```
+;
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     jarkomd15.com. root.jarkomd15.com. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      jarkomd15.com.
+@       IN      A       10.29.14.142
+@       IN      AAAA    ::1
+```
+
+> /etc/bind/named.conf.options
+
+```
+options {
+        directory "/var/cache/bind";
+
+        forwarders {
+            192.168.122.1;
+        };
+
+        allow-query{any;};
+
+        listen-on-v6 { any; };
+};
+```
+
+config ini akan mengizinkan setiap host / router yang memiliki ip dns server ini dapat mengakses internet
+
+#### Start DNS Server
+
+```
+$ service bind9 start
+```
+
+### Setup Web Server
+
+#### Install apache2
+
+```
+$ sudo apt-get update && apt-get install apache2 -y
+```
+
+#### Konfigurasi Web Server
+
+> /etc/apache2/sites-available/jarkomd15.com.conf
+
+```
+<VirtualHost *:8080>
+        ServerName jarkomd15.com
+        ServerAlias www.jarkomd15.com
+
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/jarkom
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+```
+
+setelah melakukan setting tersebut, kita melakukan enabling dengan command:
+
+```
+$ a2ensite jarkomd15.com.conf
+```
+
+> /etc/apache2/ports.conf
+
+```
+Listen 80
+Listen 8080
+
+<IfModule ssl_module>
+        Listen 443
+</IfModule>
+
+<IfModule mod_gnutls.c>
+        Listen 443
+</IfModule>
+```
+
+> /var/www/jarkom/index.html
+
+```
+Welcome to JarkomD15 Web Page!
+```
+
+#### Start Web Server
+
+setelah semua config web server diatas, kita bisa start apache2 dengan command:
+
+```
+$ service apache2 start
 ```
 
 ## Soal 1
