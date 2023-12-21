@@ -394,13 +394,27 @@ $ service apache2 start
 
 Agar topologi yang kalian buat dapat mengakses keluar, kalian diminta untuk mengkonfigurasi Aura menggunakan iptables, tetapi tidak ingin menggunakan MASQUERADE.
 
+Jawab:
+
+Agar topologi yang kalian buat dapat mengakses keluar kita perlu melakukan setting iptables pada router utama yang berhubungan langsung dengan akses keluar, yakni <code>Aura</code>:
+
 ```
 iptables -t nat -A POSTROUTING -o eth0 -j SNAT --to-source 192.168.122.2
 ```
 
+Testing:
+
+Lakukan ping google pada salah satu host yang telah disetting DNS IP nya sebelumnya:
+
+<img src="assets/ping-google.png" />
+
 ## Soal 2
 
 Kalian diminta untuk melakukan drop semua TCP dan UDP kecuali port 8080 pada TCP.
+
+Jawab:
+
+Untuk melakukan drop semua TCP dan UDP kecuali port 8080 pada TCP, kita perlu melakukan setting pada salah satu web server yang kita ingin drop TCP dan UDP nya. pada khasus ini kita akan melakukan setting pada web server <code>Sein</code>
 
 ```
 iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
@@ -409,22 +423,59 @@ iptables -A INPUT -p tcp --dport 8081:65535 -j DROP
 iptables -A INPUT -p udp -j DROP
 ```
 
+Testing:
+
+Akses dns <code>its.jarkomd15.com</code> yang telah disetting pada dns server sebelumnya dengan port 80, kemudian lakukan dengan port 8080 dengan command:
+
+port 80
+
+```
+$ lynx its.jarkomd15.com
+```
+
+<img src="assets/its-jarkomd15.png" />
+
+```
+$ lynx its.jarkomd15.com:8080
+```
+
+<img src="assets/its-jarkomd15-8080.png" />
+
 ## Soal 3
 
 Kepala Suku North Area meminta kalian untuk membatasi DHCP dan DNS Server hanya dapat dilakukan ping oleh maksimal 3 device secara bersamaan, selebihnya akan di drop.
 
-```
-# Izinkan koneksi yang sudah ada dan echo request ICMP (ping) yang masuk
-iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-iptables -A INPUT -p icmp --icmp-type echo-request -m hashlimit --hashlimit 3/s --hashlimit-burst 3 --hashlimit-mode srcip --hashlimit-name icmp_limited -j ACCEPT
+Jawab:
 
-# Hilangkan request echo ICMP tambahan
-iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
+Untuk membatasi DHCP dan DNS Server hanya dapat dilakukan ping oleh maksimal 3 device secara bersamaan, kita perlu melakukan setting iptables pada DHCP server (Revolte) dan DNS server (Richter) dengan konfigurasi sebagai berikut:
+
 ```
+iptables -A INPUT -p icmp -m connlimit --connlimit-above 3 --connlimit-mask 0 -j DROP
+```
+
+Testing:
+
+Kita perlu melakukan ping DNS atau DHCP server, pada kali ini kita akan testing DHCP server <code>Revolte</code> dengan menggunakan 3 device, kemudian 4 device
+
+Hasil ping 3 device:
+
+<img src="assets/3_pings.png" />
+
+Dapat dilihat bahwa semua ping berjalan bersamaan
+
+Hasil ping 4 device:
+
+<img src="assets/4_pings.png" />
+
+Dapat dilihat bahwa semua ping berhenti ketika device ke4 dijalankan pingnya
 
 ## Soal 4
 
 Lakukan pembatasan sehingga koneksi SSH pada Web Server hanya dapat dilakukan oleh masyarakat yang berada pada GrobeForest.
+
+Jawaban:
+
+Untuk melakukan pembatasan sehingga koneksi SSH pada Web Server hanya dapat dilakukan oleh masyarakat yang berada pada GrobeForest, kita perlu melakukan config iptables pada salah satu web server (kali ini <code>Stark</code>)
 
 ```
 # Izinkan koneksi SSH dari rentang IP yang ditentukan
@@ -435,8 +486,32 @@ iptables -A INPUT -p tcp --dport 22 -i eth0 -j DROP
 ```
 
 Testing:
-<br />
+
+pada GrobeForest, Stark, dan salah satu host lain, kita perlu install netcat
+
+```
+apt-get install netcat -y
+```
+
+Jalankan command berikut pada Stark:
+
+```
+$ nc -l -p 22
+```
+
+Jalankan command berikut pada GrobeForest dan salah satu host lain:
+
+```
 nc 10.29.14.142 22
+```
+
+berikut merupakan hasil testing pada Grobeforest:
+
+<img src="assets/ssh-test.png" />
+
+berikut merupakan hasil testing selain dengan menggunakan Grobeforest atau Sein:
+
+<img src="assets/ssh-test-1.png" />
 
 ## Soal 5
 
