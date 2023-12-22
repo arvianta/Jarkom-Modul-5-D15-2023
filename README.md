@@ -31,7 +31,7 @@ Berikut adalah hal yang harus disiapkan sebelum terjun ke soal-soal
 
 ### Setup Topologi
 
-(foto topologi di gns3, tolong masukin mas gns3 ku dead)
+<img src="assets/topologi_5.png" />
 
 Dengan keterangan
 
@@ -636,6 +636,36 @@ Dapat dilihat karena testing diadakan pada hari jumat tetapi pukul 09:00 dia ber
 ## Soal 7
 
 Karena terdapat 2 WebServer, kalian diminta agar setiap client yang mengakses Sein dengan Port 80 akan didistribusikan secara bergantian pada Sein dan Stark secara berurutan dan request dari client yang mengakses Stark dengan port 443 akan didistribusikan secara bergantian pada Sein dan Stark secara berurutan.
+
+> Jawab
+
+Pertama, kita lakukan konfigurasi pada Web Server Sein sehingga apabila mengakses Sein dengan port 80 akan didistribusikan secara bergantian pada Sein dan Stark secara berurutan
+
+```
+iptables -A PREROUTING -t nat -p tcp --dport 80 -m statistic --mode nth --every 2 --packet 0 -j DNAT --to-destination 10.29.14.142:80
+```
+
+Kemudian, kita lakukan konfigurasi pada Web Server Stark sehingga apabila mengakses Stark dengan port 443 akan didistribusikan secara bergantian pada Sein dan Stark secara berurutan
+
+```
+iptables -A PREROUTING -t nat -p tcp --dport 443 -m statistic --mode nth --every 2 --packet 0 -j DNAT --to-destination 10.29.8.2:443
+```
+
+> Testing
+
+Kita gunakan netcat pada salah satu host selain web server dan kita mencoba akses <code>Sein</code> pada port 443
+
+```
+> nc 10.29.8.2 443
+```
+
+Kemudian kita juga buka netcat dan listening ke port 443 pada <code>Sein</code> dan <code>Stark</code>
+
+```
+> nc -l -p 443
+```
+
+<img src="assets/test_443.png" />
 
 ## Soal 8
 
