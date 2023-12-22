@@ -394,7 +394,7 @@ $ service apache2 start
 
 Agar topologi yang kalian buat dapat mengakses keluar, kalian diminta untuk mengkonfigurasi Aura menggunakan iptables, tetapi tidak ingin menggunakan MASQUERADE.
 
-Jawab:
+> Jawab
 
 Agar topologi yang kalian buat dapat mengakses keluar kita perlu melakukan setting iptables pada router utama yang berhubungan langsung dengan akses keluar, yakni <code>Aura</code>:
 
@@ -402,7 +402,7 @@ Agar topologi yang kalian buat dapat mengakses keluar kita perlu melakukan setti
 iptables -t nat -A POSTROUTING -o eth0 -j SNAT --to-source 192.168.122.2
 ```
 
-Testing:
+> Testing
 
 Lakukan ping google pada salah satu host yang telah disetting DNS IP nya sebelumnya:
 
@@ -412,18 +412,21 @@ Lakukan ping google pada salah satu host yang telah disetting DNS IP nya sebelum
 
 Kalian diminta untuk melakukan drop semua TCP dan UDP kecuali port 8080 pada TCP.
 
-Jawab:
+> Jawab
 
 Untuk melakukan drop semua TCP dan UDP kecuali port 8080 pada TCP, kita perlu melakukan setting pada salah satu web server yang kita ingin drop TCP dan UDP nya. pada khasus ini kita akan melakukan setting pada web server <code>Sein</code>
 
 ```
+# Drop semua request TCP kecuali port 8080
 iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
 iptables -A INPUT -p tcp --dport 0:8079 -j DROP
 iptables -A INPUT -p tcp --dport 8081:65535 -j DROP
+
+# Drop semua request UDP
 iptables -A INPUT -p udp -j DROP
 ```
 
-Testing:
+> Testing
 
 Akses dns <code>its.jarkomd15.com</code> yang telah disetting pada dns server sebelumnya dengan port 80, kemudian lakukan dengan port 8080 dengan command:
 
@@ -435,17 +438,21 @@ $ lynx its.jarkomd15.com
 
 <img src="assets/its-jarkomd15.png" />
 
+dapat kita lihat bahwa kita tidak bisa mengakses port 80 pada Sein
+
 ```
 $ lynx its.jarkomd15.com:8080
 ```
 
 <img src="assets/its-jarkomd15-8080.png" />
 
+dapat kita lihat bahwa kita dapat mengakses port 8080 pada Sein
+
 ## Soal 3
 
 Kepala Suku North Area meminta kalian untuk membatasi DHCP dan DNS Server hanya dapat dilakukan ping oleh maksimal 3 device secara bersamaan, selebihnya akan di drop.
 
-Jawab:
+> Jawab
 
 Untuk membatasi DHCP dan DNS Server hanya dapat dilakukan ping oleh maksimal 3 device secara bersamaan, kita perlu melakukan setting iptables pada DHCP server (Revolte) dan DNS server (Richter) dengan konfigurasi sebagai berikut:
 
@@ -453,7 +460,7 @@ Untuk membatasi DHCP dan DNS Server hanya dapat dilakukan ping oleh maksimal 3 d
 iptables -A INPUT -p icmp -m connlimit --connlimit-above 3 --connlimit-mask 0 -j DROP
 ```
 
-Testing:
+> Testing
 
 Kita perlu melakukan ping DNS atau DHCP server, pada kali ini kita akan testing DHCP server <code>Revolte</code> dengan menggunakan 3 device, kemudian 4 device
 
@@ -473,7 +480,7 @@ Dapat dilihat bahwa semua ping berhenti ketika device ke4 dijalankan pingnya
 
 Lakukan pembatasan sehingga koneksi SSH pada Web Server hanya dapat dilakukan oleh masyarakat yang berada pada GrobeForest.
 
-Jawaban:
+> Jawaban
 
 Untuk melakukan pembatasan sehingga koneksi SSH pada Web Server hanya dapat dilakukan oleh masyarakat yang berada pada GrobeForest, kita perlu melakukan config iptables pada salah satu web server (kali ini <code>Stark</code>)
 
@@ -485,7 +492,7 @@ iptables -A INPUT -p tcp --dport 22 -i eth0 -m iprange --src-range 10.29.8.2-10.
 iptables -A INPUT -p tcp --dport 22 -i eth0 -j DROP
 ```
 
-Testing:
+> Testing
 
 pada GrobeForest, Stark, dan salah satu host lain, kita perlu install netcat
 
@@ -517,7 +524,7 @@ berikut merupakan hasil testing selain dengan menggunakan Grobeforest atau Sein:
 
 Selain itu, akses menuju WebServer hanya diperbolehkan saat jam kerja yaitu Senin-Jumat pada pukul 08.00-16.00.
 
-Jawab:
+> Jawab
 
 Agar akses menuju WebServer hanya diperbolehkan saat jam kerja yaitu Senin-Jumat pada pukul 08.00-16.00, kita perlu setting iptables config di web server (Sein dan Stark)
 
@@ -529,7 +536,7 @@ iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Mon,Tue,
 iptables -A INPUT -j DROP
 ```
 
-Testing:
+> Testing
 
 Untuk melakukan testing, kita perlu merubah waktu pada host yang digunakan untuk testing ke waktu yang tidak diperbolehkan untuk mengakses server
 
@@ -555,7 +562,7 @@ dapat dilihat bahwa ada respons dari server
 
 Lalu, karena ternyata terdapat beberapa waktu di mana network administrator dari WebServer tidak bisa stand by, sehingga perlu ditambahkan rule bahwa akses pada hari Senin - Kamis pada jam 12.00 - 13.00 dilarang (istirahat maksi cuy) dan akses di hari Jumat pada jam 11.00 - 13.00 juga dilarang (maklum, Jumatan rek).
 
-> Jawab:
+> Jawab
 
 Agar akses pada hari Senin - Kamis pada jam 12.00 - 13.00 dilarang (istirahat maksi cuy) dan akses di hari Jumat pada jam 11.00 - 13.00 juga dilarang (maklum, Jumatan rek) pada WebServer, kita perlu melakukan konfigurasi iptables pada Web Server (Sein dan Stark)
 
@@ -589,7 +596,7 @@ iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Mon,Tue,
 iptables -A INPUT -j DROP
 ```
 
-> Testing:
+> Testing
 
 Kali ini kita akan coba testing menggunakan TurkRegion (host)
 
@@ -676,18 +683,29 @@ dapat dilihat bahwa ping berhasil
 
 Sadar akan adanya potensial saling serang antar kubu politik, maka WebServer harus dapat secara otomatis memblokir alamat IP yang melakukan scanning port dalam jumlah banyak (maksimal 20 scan port) di dalam selang waktu 10 menit. (clue: test dengan nmap)
 
-```
-# Buat chain untuk melacak potensi pemindaian port
-iptables -N PORTSCAN
-iptables -A PORTSCAN -m recent --name PORTSCAN --set -j ACCEPT
+> Jawab
 
-# Check incoming TCP packets, track port scanning (assuming port 80 for illustration)
-iptables -A INPUT -p tcp --dport 80 -m recent --name PORTSCAN --rcheck --seconds 600 --hitcount 20 -j LOG --log-prefix "Portscan detected: "
-iptables -A INPUT -p tcp --dport 80 -m recent --name PORTSCAN --rcheck --seconds 600 --hitcount 20 -j DROP
+WebServer harus dapat secara otomatis memblokir alamat IP yang melakukan scanning port dalam jumlah banyak (maksimal 20 scan port) di dalam selang waktu 10 menit.
 
-# Allow legitimate traffic
-iptables -A INPUT -p tcp --dport 80 -j ACCEPT
 ```
+# limit 20 ping per jam, perbolehkan maksimal 20 ping, mode terjadi setiap device, rule ini bernama portscan, kemudian htable expired setelah 10000 milisekon
+iptables -A INPUT -m hashlimit --hashlimit-above 20/hour --hashlimit-burst 20 --hashlimit-mode srcip --hashlimit-name portscan --hashlimit-htable-expire 10000 -j DROP
+
+# accept request lain
+iptables -A INPUT -j ACCEPT
+```
+
+> Testing
+
+Pada kali ini, kita testing dengan command sebagai berikut:
+
+```
+$ ping 10.29.14.142 -c 25
+```
+
+<img src="assets/maxping_test.png" />
+
+dapat dilihat dari 25 ping request, hanya terdapat 20 yang sukses
 
 ## Soal 10
 
