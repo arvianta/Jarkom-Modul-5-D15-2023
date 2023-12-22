@@ -634,23 +634,43 @@ Karena terdapat 2 WebServer, kalian diminta agar setiap client yang mengakses Se
 
 Karena berbeda koalisi politik, maka subnet dengan masyarakat yang berada pada Revolte dilarang keras mengakses WebServer hingga masa pencoblosan pemilu kepala suku 2024 berakhir. Masa pemilu (hingga pemungutan dan penghitungan suara selesai) kepala suku bersamaan dengan masa pemilu Presiden dan Wakil Presiden Indonesia 2024.
 
+> Jawab
+
 Masa pemilu berakhir (termasuk penghitungan suara): 20 Maret 2024
 
-Perintah iptables yang membatasi akses ke 10.29.14.142 dan 10.29.8.2 dari 10.29.14.129/30 hingga 20 Maret 2024:
+Untuk membatasi akses ke Sein dan Stark (Web Server) dari 10.29.14.129/30 hingga 20 Maret 2024, kita perlu melakukan setting iptables di Sein dan Stark dengan konfigurasi sebagai berikut:
 
 ```
-# Secara default mengizinkan semua akses
-iptables -A INPUT -j ACCEPT
-
-# Izinkan traffic dari IP tertentu kecuali rentang yang ditentukan dan setelah 20 Maret 2024
-iptables -A INPUT -s 10.29.14.142 -j ACCEPT
-iptables -A INPUT -s 10.29.8.2 -j ACCEPT
+# Drop semua traffic yang berasal dari subnet Revolte hingga 20 Maret 2024
 iptables -A INPUT -s 10.29.14.129/30 -m time --datestop 2024-03-20 -j DROP
-iptables -A INPUT -s 10.29.14.129/30 -j ACCEPT
 
-# Drop semua traffic lain
-iptables -A INPUT -j DROP
+# Accept request lain
+iptables -A INPUT -j ACCEPT
 ```
+
+> Testing
+
+Untuk testing, pada kali ini kita akan menggunakan host Revolte
+
+Pertama, kita ubah tanggal sehingga tanggal sebelum 20 Maret 2024, kemudian kita ping Stark
+
+```
+date -s "22 DEC 2023 09:00:00"
+```
+
+<img src="assets/pemilu_test.png" />
+
+dapat dilihat bahwa ping gagal
+
+Setelah itu, kita ubah tanggal sehingga tanggal setelah 20 Maret 2024, kemudian kita ping Stark
+
+```
+date -s "23 DEC 2024 09:00:00"
+```
+
+<img src="assets/pemilu_test_1.png" />
+
+dapat dilihat bahwa ping berhasil
 
 ## Soal 9
 
