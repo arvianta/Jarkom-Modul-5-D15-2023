@@ -517,48 +517,114 @@ berikut merupakan hasil testing selain dengan menggunakan Grobeforest atau Sein:
 
 Selain itu, akses menuju WebServer hanya diperbolehkan saat jam kerja yaitu Senin-Jumat pada pukul 08.00-16.00.
 
-```
-# Izinkan koneksi yang sudah ada dan traffic masuk yang terkait dengan koneksi yang sudah ada
-iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+Jawab:
 
+Agar akses menuju WebServer hanya diperbolehkan saat jam kerja yaitu Senin-Jumat pada pukul 08.00-16.00, kita perlu setting iptables config di web server (Sein dan Stark)
+
+```
 # Izinkan traffic masuk pada hari kerja (Senin-Jumat) mulai pukul 08:00 hingga 16:00
-iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Mon -j ACCEPT
-iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Tue -j ACCEPT
-iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Wed -j ACCEPT
-iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Thu -j ACCEPT
-iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Fri -j ACCEPT
+iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Mon,Tue,Wed,Thu,Fri -j ACCEPT
 
 # Drop semua traffic masuk lainnya
 iptables -A INPUT -j DROP
 ```
 
+Testing:
+
+Untuk melakukan testing, kita perlu merubah waktu pada host yang digunakan untuk testing ke waktu yang tidak diperbolehkan untuk mengakses server
+
+```
+$ date -s "20 DEC 2023 06:00:00"
+```
+
+dapat dilihat bahwa tidak ada respons dari server
+
+<img src="assets/time_testing.png" />
+
+kemudian kita ubah lagi ke waktu yang diperbolehkan untuk mengakses server
+
+```
+$ date -s "20 DEC 2023 09:00:00"
+```
+
+<img src="assets/time_testing_1.png" />
+
+dapat dilihat bahwa ada respons dari server
+
 ## Soal 6
 
 Lalu, karena ternyata terdapat beberapa waktu di mana network administrator dari WebServer tidak bisa stand by, sehingga perlu ditambahkan rule bahwa akses pada hari Senin - Kamis pada jam 12.00 - 13.00 dilarang (istirahat maksi cuy) dan akses di hari Jumat pada jam 11.00 - 13.00 juga dilarang (maklum, Jumatan rek).
 
+> Jawab:
+
+Agar akses pada hari Senin - Kamis pada jam 12.00 - 13.00 dilarang (istirahat maksi cuy) dan akses di hari Jumat pada jam 11.00 - 13.00 juga dilarang (maklum, Jumatan rek) pada WebServer, kita perlu melakukan konfigurasi iptables pada Web Server (Sein dan Stark)
+
 ```
-# Izinkan semua traffic
-iptables -A INPUT -j ACCEPT
+# Senin hingga Kamis dari 12:00 hingga 13:00 dilarang
+iptables -A INPUT -m time --timestart 12:00 --timestop 13:00 --weekdays Mon,Tue,Wed,Thu -j DROP
 
-# Izinkan alamat IP tertentu pada jangka waktu tertentu
-# Senin hingga Kamis from 12:00 to 13:00
-iptables -A INPUT -p tcp -s 10.29.14.142 -m time --timestart 12:00 --timestop 13:00 --weekdays Mon -j ACCEPT
-iptables -A INPUT -p tcp -s 10.29.14.142 -m time --timestart 12:00 --timestop 13:00 --weekdays Tue -j ACCEPT
-iptables -A INPUT -p tcp -s 10.29.14.142 -m time --timestart 12:00 --timestop 13:00 --weekdays Wed -j ACCEPT
-iptables -A INPUT -p tcp -s 10.29.14.142 -m time --timestart 12:00 --timestop 13:00 --weekdays Thu -j ACCEPT
+# Jumat dari 11:00 hingga 13:00 dilarang
+iptables -A INPUT -m time --timestart 11:00 --timestop 13:00 --weekdays Fri -j DROP
 
-iptables -A INPUT -p tcp -s 10.29.8.2 -m time --timestart 12:00 --timestop 13:00 --weekdays Mon -j ACCEPT
-iptables -A INPUT -p tcp -s 10.29.8.2 -m time --timestart 12:00 --timestop 13:00 --weekdays Tue -j ACCEPT
-iptables -A INPUT -p tcp -s 10.29.8.2 -m time --timestart 12:00 --timestop 13:00 --weekdays Wed -j ACCEPT
-iptables -A INPUT -p tcp -s 10.29.8.2 -m time --timestart 12:00 --timestop 13:00 --weekdays Thu -j ACCEPT
+# Izinkan traffic masuk pada hari kerja (Senin-Jumat) mulai pukul 08:00 hingga 16:00
+iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Mon,Tue,Wed,Thu,Fri -j ACCEPT
 
-# Jumat dari 11:00 hingga 13:00
-iptables -A INPUT -p tcp -s 10.29.14.142 -m time --timestart 11:00 --timestop 13:00 --weekdays Fri -j ACCEPT
-iptables -A INPUT -p tcp -s 10.29.8.2 -m time --timestart 11:00 --timestop 13:00 --weekdays Fri -j ACCEPT
-
-# Drop traffic lainnya
+# Drop semua traffic masuk lainnya
 iptables -A INPUT -j DROP
 ```
+
+berikut merupakan konfigurasi waktu lengkap web server:
+
+```
+# Senin hingga Kamis dari 12:00 hingga 13:00 dilarang
+iptables -A INPUT -m time --timestart 12:00 --timestop 13:00 --weekdays Mon,Tue,Wed,Thu -j DROP
+
+# Jumat dari 11:00 hingga 13:00 dilarang
+iptables -A INPUT -m time --timestart 11:00 --timestop 13:00 --weekdays Fri -j DROP
+
+# Izinkan traffic masuk pada hari kerja (Senin-Jumat) mulai pukul 08:00 hingga 16:00
+iptables -A INPUT -m time --timestart 08:00 --timestop 16:00 --weekdays Mon,Tue,Wed,Thu,Fri -j ACCEPT
+
+# Drop semua traffic masuk lainnya
+iptables -A INPUT -j DROP
+```
+
+> Testing:
+
+Kali ini kita akan coba testing menggunakan TurkRegion (host)
+
+pertama, kita perlu setting waktu pada pukul 12:30 pada hari kamis, lalu lakukan ping ke Stark (web server)
+
+```
+$ date -s "21 DEC 2023 12:30:00"
+$ ping 10.29.14.142
+```
+
+<img src="assets/time_testing_1_1.png" />
+
+Dapat dilihat karena testing diadakan pada hari kamis pukul 12:30 dia gagal melakukan ping
+
+kemudian, kita perlu setting waktu pada pukul 11:30 pada hari jumat, lalu lakukan ping ke Stark (web server)
+
+```
+$ date -s "22 DEC 2023 11:30:00"
+$ ping 10.29.14.142
+```
+
+<img src="assets/time_testing_1_2.png" />
+
+Dapat dilihat karena testing diadakan pada hari jumat tetapi pukul 11:30 dia gagal melakukan ping
+
+kemudian, kita perlu setting waktu pada pukul 09:00 pada hari jumat, lalu lakukan ping ke Stark (web server)
+
+```
+$ date -s "22 DEC 2023 09:00:00"
+$ ping 10.29.14.142
+```
+
+<img src="assets/time_testing_1_3.png" />
+
+Dapat dilihat karena testing diadakan pada hari jumat tetapi pukul 09:00 dia berhasil melakukan ping
 
 ## Soal 7
 
